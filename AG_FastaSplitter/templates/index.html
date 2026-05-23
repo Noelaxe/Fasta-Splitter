@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FASTA Splitter - Sequence Divider Web Server</title>
+    <!-- Modern academic typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #f7f9fa;
+            --container-bg: #ffffff;
+            --primary-color: #1a365d; /* Elegant deep navy */
+            --accent-color: #2b6cb0;
+            --text-dark: #2d3748;
+            --text-muted: #718096;
+            --border-color: #e2e8f0;
+            --tab-bg: #edf2f7;
+            --tab-active: #ffffff;
+            --tab-hover: #e2e8f0;
+            --success-color: #38a169;
+            --error-color: #e53e3e;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            --radius: 6px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+
+        .server-container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+
+        /* Top Header Area mirroring DTU layout */
+        .server-header {
+            padding: 30px 40px 20px 40px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .server-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .server-subtitle {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 12px;
+        }
+
+        .server-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            max-width: 800px;
+        }
+
+        /* Scientific Tab Bar Navigation */
+        .tab-navigation {
+            display: flex;
+            background: var(--tab-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding-left: 20px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: 1px solid transparent;
+            border-bottom: none;
+            outline: none;
+            padding: 12px 24px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            top: 1px;
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+        }
+
+        .tab-btn:hover {
+            background-color: var(--tab-hover);
+            color: var(--text-dark);
+        }
+
+        .tab-btn.active {
+            background-color: var(--tab-active);
+            color: var(--primary-color);
+            border-color: var(--border-color);
+            font-weight: 600;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.02);
+        }
+
+        /* Content Sections */
+        .tab-content {
+            display: none;
+            padding: 40px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        /* Constraint / Info Box */
+        .constraint-box {
+            background: #f8fafc;
+            border-left: 4px solid var(--accent-color);
+            padding: 12px 16px;
+            font-size: 13.5px;
+            font-style: italic;
+            color: #4a5568;
+            margin-bottom: 25px;
+            border-radius: 0 var(--radius) var(--radius) 0;
+        }
+
+        /* Form Styling */
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-dark);
+        }
+
+        .sequence-textarea {
+            width: 100%;
+            height: 250px;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 13px;
+            padding: 15px;
+            border: 1px solid #cbd5e0;
+            border-radius: var(--radius);
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            color: #2d3748;
+        }
+
+        .sequence-textarea:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+        }
+
+        .example-link-wrapper {
+            margin-top: 6px;
+            font-size: 13px;
+        }
+
+        .example-link {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .example-link:hover {
+            text-decoration: underline;
+        }
+
+        .upload-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            padding: 15px;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            margin-bottom: 25px;
+        }
+
+        .file-input {
+            font-size: 13px;
+            color: var(--text-dark);
+        }
+
+        .limit-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .limit-input {
+            width: 80px;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #cbd5e0;
+            border-radius: var(--radius);
+            text-align: center;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .limit-input:focus {
+            border-color: var(--accent-color);
+        }
+
+        /* Support tab text input */
+        .support-input {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-family: inherit;
+            border: 1px solid #cbd5e0;
+            border-radius: var(--radius);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            color: var(--text-dark);
+            background: #fff;
+        }
+
+        .support-input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+        }
+
+        /* Buttons styling */
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border: 1px solid var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #0f2440;
+            border-color: #0f2440;
+        }
+
+        .btn-secondary {
+            background-color: #edf2f7;
+            color: var(--text-dark);
+            border: 1px solid #cbd5e0;
+        }
+
+        .btn-secondary:hover {
+            background-color: #e2e8f0;
+        }
+
+        /* Feedback Panels */
+        .feedback-panel {
+            display: none;
+            padding: 15px 20px;
+            border-radius: var(--radius);
+            margin-bottom: 25px;
+            font-size: 14px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .feedback-panel.error {
+            background-color: #fff5f5;
+            border: 1px solid #feb2b2;
+            color: var(--error-color);
+            display: block;
+        }
+
+        .feedback-panel.success {
+            background-color: #f0fff4;
+            border: 1px solid #9ae6b4;
+            color: var(--success-color);
+            display: block;
+        }
+
+        /* Progress Bar Loading Styling */
+        .loader-overlay {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 25px;
+            width: 100%;
+        }
+
+        .loader-overlay.active {
+            display: flex;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background-color: #edf2f7;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #cbd5e0;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .progress-bar-fill {
+            width: 0%;
+            height: 100%;
+            background-color: var(--accent-color);
+            transition: width 0.1s linear;
+            border-radius: 5px;
+        }
+
+        .progress-status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* Footer */
+        .server-footer {
+            text-align: center;
+            padding: 30px;
+            font-size: 12px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* Instructions & About Styles */
+        .academic-text {
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        .academic-text p {
+            margin-bottom: 15px;
+        }
+
+        .academic-text h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 25px 0 10px 0;
+        }
+
+        .academic-text ul, .academic-text ol {
+            margin-bottom: 20px;
+            padding-left: 20px;
+        }
+
+        .academic-text li {
+            margin-bottom: 8px;
+        }
+
+        .code-block {
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+            border-radius: var(--radius);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            margin: 15px 0;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 15px 10px;
+            }
+            .server-header {
+                padding: 20px;
+            }
+            .tab-content {
+                padding: 20px;
+            }
+            .tab-navigation {
+                padding-left: 10px;
+            }
+            .tab-btn {
+                padding: 10px 14px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="server-container">
+        
+        <!-- Header -->
+        <header class="server-header">
+            <h1 class="server-title">FASTA Splitter</h1>
+            <div class="server-subtitle">Sequence Divider Tool</div>
+            <p class="server-desc">
+                Paste or upload sequence data in FASTA format to split a large dataset into multiple smaller files with a custom number of sequences per file.
+            </p>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <nav class="tab-navigation">
+            <button class="tab-btn active" onclick="switchTab('submission')">Submission</button>
+            <button class="tab-btn" onclick="switchTab('instructions')">Instructions</button>
+            <button class="tab-btn" onclick="switchTab('about')">About</button>
+            <button class="tab-btn" onclick="switchTab('support')">Support</button>
+        </nav>
+
+        <!-- Submission Content -->
+        <main id="submission" class="tab-content active">
+            <h2 class="section-title">Submit data</h2>
+            
+            <div class="constraint-box">
+                Supports FASTA text paste or file upload up to 500 MB. For large sequence datasets greater than 500 MB, you may upload your sequence file compressed as a <strong>.zip</strong> archive.
+            </div>
+
+            <!-- Feedback / Error messages -->
+            <div id="feedbackPanel" class="feedback-panel"></div>
+
+            <!-- Progress Bar Loader -->
+            <div id="loader" class="loader-overlay">
+                <div class="progress-bar-container">
+                    <div id="progressBar" class="progress-bar-fill"></div>
+                </div>
+                <div class="progress-status-row">
+                    <span id="loaderText">Processing FASTA sequences and preparing ZIP package...</span>
+                    <span id="loaderPercent">0%</span>
+                </div>
+            </div>
+
+            <form id="splitterForm">
+                
+                <div class="form-group">
+                    <label class="form-label" for="fastaText">Enter sequence(s) in FASTA format:</label>
+                    <textarea 
+                        id="fastaText" 
+                        name="fasta_text" 
+                        class="sequence-textarea" 
+                        placeholder="&gt;seq1 Description&#10;MNSVTVSHAPLIILGLVALVGA&#10;&gt;seq2 Description&#10;MPKIVLVGAAGGIGQPSALLLK..."></textarea>
+                    
+                    <div class="example-link-wrapper">
+                        For example file <span class="example-link" onclick="loadExample()">Click here</span>
+                    </div>
+                </div>
+
+                <div class="upload-row">
+                    <span style="font-size: 13.5px; font-weight: 600;">Format directly from your local disk:</span>
+                    <input type="file" id="fastaFile" name="fasta_file" class="file-input" accept=".fasta,.fa,.txt,.seq,.fna,.faa,.zip">
+                </div>
+
+                <div class="limit-input-wrapper">
+                    <label class="form-label" for="splitLimit" style="margin-bottom: 0;">Number of sequences per split file:</label>
+                    <input type="number" id="splitLimit" name="split_limit" class="limit-input" value="10" min="1" step="1">
+                </div>
+
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <button type="button" class="btn btn-secondary" onclick="clearFields()">Clear fields</button>
+                </div>
+
+            </form>
+        </main>
+
+        <!-- Instructions Content -->
+        <section id="instructions" class="tab-content">
+            <h2 class="section-title">Instructions</h2>
+            
+            <div class="academic-text">
+                <p>
+                    The FASTA Splitter tool takes a multi-sequence FASTA dataset (either uploaded as a file or pasted into the form) and breaks it up into separate files. This is extremely useful for running batch operations on bioinformatics prediction servers that impose sequence limits per submission.
+                </p>
+
+                <h3>How to use the tool:</h3>
+                <ol>
+                    <li>
+                        <strong>Provide Sequence Data:</strong> Either copy and paste your FASTA sequences into the text area under the <em>Submission</em> tab, click <strong>Choose File</strong> to upload a FASTA formatted file directly, or upload a compressed <strong>.zip</strong> archive containing your sequence file (strongly recommended for datasets greater than 500 MB).
+                    </li>
+                    <li>
+                        <strong>Specify Split Limit:</strong> Enter the maximum number of sequences you want in each individual split file. For instance, if you have 100 sequences and set the limit to 20, the tool will divide them into 5 files containing exactly 20 sequences each.
+                    </li>
+                    <li>
+                        <strong>Submit and Download:</strong> Click the <strong>Submit</strong> button. The server will validate the format, process the sequences, package the output files into a compressed <code>.zip</code> file, and initiate an automatic download in your browser.
+                    </li>
+                    <li>
+                        <strong>Reset:</strong> Click <strong>Clear fields</strong> to reset the form and start a new job.
+                    </li>
+                </ol>
+
+                <h3>Valid FASTA Format Rule:</h3>
+                <p>
+                    Your data must strictly follow the standard FASTA rules. Each sequence must begin with a single-line header description starting with a <code>&gt;</code> character, followed immediately by lines of sequence data:
+                </p>
+                <div class="code-block">&gt;sequence_id_1 description of first sequence
+MDAMKRGLCCVLLLCGAVFVSPSQEIHARFRRGARSYQVICRDEKTQMIYQQHQSWLRPV
+LRSNRVEYCWCNSGRAQCHSVPVKSCTEPRCFNGGTCQQALYFSDFVCQCPEGFAGKCCE
+&gt;sequence_id_2 description of second sequence
+MNSVTVSHAPLIILGLVALVGAASVAGSVVVPGLKLDVEKLTVSLQGLAGKVSVDVNKLA</div>
+            </div>
+        </section>
+
+        <!-- About Content -->
+        <section id="about" class="tab-content">
+            <h2 class="section-title">About FASTA Splitter</h2>
+            
+            <div class="academic-text">
+                <p>
+                    <strong>FASTA Splitter</strong> is a high-throughput sequence partitioning utility designed to simplify workflows in structural biology, genomics, and immunoinformatics.
+                </p>
+                
+                <h3>Why Split FASTA Files?</h3>
+                <p>
+                    Many state-of-the-art bioinformatics servers (such as NetMHC, SignalP, BepiPred, and TMHMM) limit the number of sequence entries or total amino acids allowed per single submission to manage server compute load fairly. Researchers working with large-scale sequencing runs or entire proteomes often have to manually copy-paste sequences in blocks of 50 or 100.
+                </p>
+                <p>
+                    This tool automates that tedious workflow. By splitting your massive FASTA database into exact chunk sizes, you can rapidly submit them across parallel tabs or use batch API endpoints without violating third-party resource constraints.
+                </p>
+
+            </div>
+        </section>
+
+        <!-- Support Content -->
+        <section id="support" class="tab-content">
+            <h2 class="section-title">Support</h2>
+
+            <div class="academic-text">
+                <p>
+                    If you have encountered an issue, have a suggestion for improvement, or would like to provide feedback about the FASTA Splitter tool, please use the form below to send a message directly to the development team.
+                </p>
+            </div>
+
+            <form id="supportForm" onsubmit="sendSupportEmail(event)">
+
+                <div class="form-group">
+                    <label class="form-label" for="supportName">Your Name</label>
+                    <input
+                        type="text"
+                        id="supportName"
+                        class="support-input"
+                        placeholder="e.g. Jane Smith"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="supportSubject">Subject</label>
+                    <input
+                        type="text"
+                        id="supportSubject"
+                        class="support-input"
+                        placeholder="e.g. Bug report, Feature request, General feedback"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="supportMessage">Message</label>
+                    <textarea
+                        id="supportMessage"
+                        class="sequence-textarea"
+                        style="height: 180px; font-family: inherit; font-size: 14px;"
+                        placeholder="Please describe your issue or feedback in detail..."
+                        required></textarea>
+                </div>
+
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">Send Email</button>
+                    <button type="button" class="btn btn-secondary" onclick="clearSupport()">Clear</button>
+                </div>
+
+                <p style="margin-top: 18px; font-size: 13px; color: var(--text-muted);">
+                    Clicking <strong>Send Email</strong> will open your default email client with a pre-filled message addressed to
+                    <a href="mailto:noelsjv@gmail.com" style="color: var(--accent-color);">noelsjv@gmail.com</a>.
+                </p>
+
+            </form>
+        </section>
+
+        <!-- Footer -->
+        <footer class="server-footer">
+            &copy; 2026 FASTA Splitter Web Server. For academic use only.
+        </footer>
+
+    </div>
+
+    <script>
+        // Switch between tabs
+        function switchTab(tabId) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+
+            // Remove active class from all buttons
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(button => button.classList.remove('active'));
+
+            // Show selected tab content
+            document.getElementById(tabId).classList.add('active');
+
+            // Find matching button and make active
+            const activeBtn = Array.from(buttons).find(btn => btn.textContent.toLowerCase() === tabId);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            } else {
+                // Fallback matching
+                const btns = document.querySelectorAll('.tab-btn');
+                btns.forEach(btn => {
+                    if (btn.getAttribute('onclick').includes(tabId)) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+        }
+
+        // Clear all fields
+        function clearFields() {
+            document.getElementById('fastaText').value = '';
+            document.getElementById('fastaFile').value = '';
+            document.getElementById('splitLimit').value = '10';
+            hideFeedback();
+        }
+
+        // Send support email via mailto
+        function sendSupportEmail(e) {
+            e.preventDefault();
+            const name    = document.getElementById('supportName').value.trim();
+            const subject = document.getElementById('supportSubject').value.trim();
+            const message = document.getElementById('supportMessage').value.trim();
+
+            if (!name || !subject || !message) return;
+
+            const fullSubject = encodeURIComponent(`[FASTA Splitter] ${subject}`);
+            const body = encodeURIComponent(`Name: ${name}\n\nMessage:\n${message}`);
+            const mailtoHref = `mailto:noelsjv@gmail.com?subject=${fullSubject}&body=${body}`;
+
+            // Use a hidden anchor click to trigger the mail client
+            // without navigating the page (avoids Flask intercepting the URL)
+            const a = document.createElement('a');
+            a.href = mailtoHref;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // Clear support form fields
+        function clearSupport() {
+            document.getElementById('supportName').value = '';
+            document.getElementById('supportSubject').value = '';
+            document.getElementById('supportMessage').value = '';
+        }
+
+        // Populate sample data into the textarea
+        function loadExample() {
+            const exampleData = `>seq1 First sample sequence (human hemoglobin subunit beta variant)
+MVHLTPEEKSAVTALWGKVNVDEVGGEALGRLLVVYPWTQRFFESFGDLSTPDAVMGNPK
+VKAHGKKVLGAFSDGLAHLDNLKGTFATLSELHCDKLHVDPENFRLLGNVLVCVLAHHFG
+KEFTPPVQAAYQKVVAGVANALAHKYH
+>seq2 Second sample sequence (green fluorescent protein GFP)
+MSKGEELFTGVVPILVELDGDVNGHKFSVSGEGEGDATYGKLTLKFICTTGKLPVPWPTL
+VTTFSYGVQCFSRYPDHMKQHDFFKSAMPEGYVQERTIFFKDDGNYKTRAEVKFEGDTLV
+NRIELKGIDFKEDGNILGHKLEYNYNSHNVYIMADKQKNGIKVNFKIRHNIEDGSVQLAD
+HYQQNTPIGDGPVLLPDNHYLSTQSALSKDPNEKRDHMVLLEFVTAAGITHGMDELYK
+>seq3 Third sample sequence (bovine pancreatic trypsin inhibitor)
+RPDFCLEPPYTGPCKARIIRYFYNAKAGLCQTFVYGGCRAKRNNFKSAEDCMRTCGGA
+>seq4 Fourth sample sequence (ubiquitin protein variant)
+MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYN
+IQKESTLHLVLRLRGG
+>seq5 Fifth sample sequence (bacteriorhodopsin fragment)
+MQAQITGRPEWIWLALGTALMGLGTLYFLVKGMGVSDPDAKKFYAITTLVPAIAFTMYLS
+MLLGYGLTMVPFGGEQNPIYWARYADWLFTTPLLLLDLALLVDADQGTILALVGADGIMI
+GTGLVGALTKVYSYRFVWWAISTAAMLYILYVLFFGFTSKAESMRPEVASTFKVLRNVTV
+VLWSAYPVVWLIGSEGAGIVPLNIETLLFMVLDVSAKVGFGLILLRSRAIFGEAEAPEPS
+AGDGAAATSD`;
+            
+            document.getElementById('fastaText').value = exampleData;
+            document.getElementById('fastaFile').value = ''; // Clear file if paste is selected
+            hideFeedback();
+            
+            // Auto scroll to textarea
+            document.getElementById('fastaText').focus();
+        }
+
+        // Feedback helpers
+        function showFeedback(message, type) {
+            const panel = document.getElementById('feedbackPanel');
+            panel.textContent = message;
+            panel.className = 'feedback-panel ' + type;
+        }
+
+        function hideFeedback() {
+            const panel = document.getElementById('feedbackPanel');
+            panel.className = 'feedback-panel';
+            panel.textContent = '';
+        }
+
+        // Intercept form submit and handle it via AJAX for premium responsiveness
+        document.getElementById('splitterForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            hideFeedback();
+
+            const fastaText = document.getElementById('fastaText').value.strip ? 
+                              document.getElementById('fastaText').value.strip() : 
+                              document.getElementById('fastaText').value.trim();
+            const fileInput = document.getElementById('fastaFile');
+            const splitLimit = document.getElementById('splitLimit').value;
+
+            // Simple client-side check
+            if (!fastaText && (!fileInput.files || fileInput.files.length === 0)) {
+                showFeedback('Error: Please provide sequences either by copy-pasting or by uploading a file.', 'error');
+                return;
+            }
+
+            if (!splitLimit || parseInt(splitLimit) <= 0) {
+                showFeedback('Error: Number of sequences per file must be a positive integer greater than 0.', 'error');
+                return;
+            }
+
+            // Prepare form data
+            const formData = new FormData(this);
+
+            // Show loading progress bar
+            const loader = document.getElementById('loader');
+            const progressBar = document.getElementById('progressBar');
+            const loaderPercent = document.getElementById('loaderPercent');
+            const loaderText = document.getElementById('loaderText');
+            
+            progressBar.style.width = '0%';
+            loaderPercent.textContent = '0%';
+            loaderText.textContent = 'Analyzing sequence headers...';
+            loader.classList.add('active');
+
+            // Simulated progress bar updates
+            let progress = 0;
+            progressBar.style.transition = 'width 0.2s ease-out';
+            
+            const progressInterval = setInterval(() => {
+                if (progress < 30) {
+                    progress += Math.floor(Math.random() * 3) + 2; // Increments of 2-4%
+                } else if (progress < 70) {
+                    if (progress >= 30 && loaderText.textContent.startsWith('Analyzing')) {
+                        loaderText.textContent = 'Splitting FASTA data into parts...';
+                    }
+                    progress += 1;
+                } else if (progress < 95) {
+                    if (progress >= 70 && loaderText.textContent.startsWith('Splitting')) {
+                        loaderText.textContent = 'Packaging divided parts into ZIP archive...';
+                    }
+                    progress += 0.5;
+                }
+                
+                // Cap at 95% until complete
+                if (progress > 95) progress = 95;
+                
+                const percentStr = Math.floor(progress) + '%';
+                progressBar.style.width = percentStr;
+                loaderPercent.textContent = percentStr;
+            }, 100);
+
+            try {
+                const response = await fetch('/split', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    // Try to parse error as JSON
+                    let errorData;
+                    try {
+                        errorData = await response.json();
+                    } catch (e) {
+                        errorData = { error: 'Server returned an error. Please verify your FASTA file format.' };
+                    }
+                    throw new Error(errorData.error || 'Request failed.');
+                }
+
+                // Complete progress bar immediately
+                clearInterval(progressInterval);
+                progressBar.style.transition = 'width 0.1s ease-out';
+                progressBar.style.width = '100%';
+                loaderPercent.textContent = '100%';
+                loaderText.textContent = 'ZIP package download initiated!';
+
+                // If success, get the blob (the ZIP file)
+                const blob = await response.blob();
+                
+                // Try to extract filename from Content-Disposition header
+                const disposition = response.headers.get('Content-Disposition');
+                let downloadFilename = 'fasta_split_parts.zip';
+                if (disposition) {
+                    const filenameMatch = disposition.match(/filename="?([^";]+)"?/);
+                    if (filenameMatch && filenameMatch[1]) {
+                        downloadFilename = filenameMatch[1];
+                    }
+                }
+                
+                // Create temporary download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = downloadFilename;
+                document.body.appendChild(a);
+                a.click();
+                
+                // Cleanup
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                showFeedback('Success! Your FASTA file was successfully split and the ZIP archive download has started.', 'success');
+
+            } catch (error) {
+                clearInterval(progressInterval);
+                showFeedback(error.message || 'An unexpected error occurred during processing.', 'error');
+            } finally {
+                // Keep the 100% full bar visible for a moment, then fade out
+                if (progressBar.style.width === '100%') {
+                    setTimeout(() => {
+                        loader.classList.remove('active');
+                    }, 2000);
+                } else {
+                    loader.classList.remove('active');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
